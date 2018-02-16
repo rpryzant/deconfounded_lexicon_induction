@@ -2,7 +2,7 @@
 
 This repo contains code for the paper, "Deconfounded Lexicon Induction for Interpretable Social Science".
 
-You can read the paper here. It outlines the algorithms implemented in this repo.
+You can read the paper [here](). It outlines the algorithms implemented in this repo.
 
 The project website is [here]().
 
