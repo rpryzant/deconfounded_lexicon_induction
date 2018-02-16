@@ -1,0 +1,191 @@
+
+########## DATA
+data_dir: "datasets/synthetic/leo_will_small/"
+prefix: "generated"
+train_suffix: ".train"
+dev_suffix: ".dev"
+dev_size: 10
+test_suffix: ".test"
+test_size: 10
+max_seq_len: 60
+
+sos: "<s>"
+eos: "</s>"
+unk: "<unk>"
+
+# list of variables in the TSV input files. 
+# variables should be listed in left => right order.
+# variables are given 
+#    - a name
+#    - a type (continuous/categorical) ,
+#    - whether they are to be controlled for
+#    - whether they are to be skipped (disregaurded by the system)
+#    - a weight for their combination in the loss of the neural models
+data_spec:
+  - name: "text-input"
+    type: "text"
+
+  - name: "continuous_1"
+    type: "continuous"
+    control: False
+    skip: False
+    weight: 1
+
+  - name: "continuous_2"
+    type: "continuous"
+    control: True
+    skip: False
+    weight: 1
+
+  - name: "categorical_1"
+    type: "categorical"
+    control: True
+    skip: False
+    weight: 1
+
+  - name: "categorical_2"
+    type: "categorical"
+    control: False
+    skip: False
+    weight: 1
+
+
+
+
+########## MODELING
+seed: 3
+working_dir: "test_run"
+
+
+vocab:
+  # points to a 1-per-line file of tokens, or null (generate with top_n words)
+  vocab_file: null
+  top_n: 5000
+  # options for pre-selecting a subset features before using a model
+  preselection_algo: 'identity' # odds-ratio, mutual-information, identity
+  preselection_features: 0 # set to 0 to turn pre-selection off
+
+
+
+# list of models to be run. 
+# Each model in the list will either train or test (depending on flags)
+# model can be named and skipped
+model_spec:
+  - type: "A_ATTN"
+    name: "flip_1"
+    skip: True
+    params:
+      use_glove: False # pre-initialize word embeddings with a pretrained .pkl file containing {word: vector} dict
+      attn_importance_strategy: 'mean'  # how to select features from attentional scores: [mean, max]
+      batch_size: 2
+      num_train_steps: 10
+      learning_rate: 0.001
+      embedding_size: 10
+      encoder_layers: 1  # set to 0 for no RNN, and go directly from word embeddings
+      encoder_units: 10
+      attn_layers: 2
+      attn_units: 10
+      classifier_layers: 1
+      classifier_units: 10
+      regressor_layers: 1
+      regressor_units: 10
+      gradient_clip: 5.0
+      dropout: 0.4
+
+  - type: 'DR_BOW'
+    name: 'causal_1'
+    skip: True
+    params:
+      batch_size: 128
+      num_train_steps: 10
+      learning_rate: 0.01
+      reg_type: 'bow' # regularize bag of words weights only or everything: ['bow', 'all']
+      regularizor: 'l2'   # [l1, l2]
+      lambda: 0.1         # 0 turns regularization off
+      encoder_layers: 1
+      encoding_dim: 4
+      regression_layers_1: 1
+      regression_hidden_1: 4
+      regression_layers_2: 1
+      regression_hidden_2: 4
+      classification_layers_1: 1
+      classification_hidden_1: 4
+      classification_layers_2: 1
+      classification_hidden_2: 4
+
+  - type: 'A_BOW'
+    name: 'bow-neural'
+    skip: True
+    params:
+      batch_size: 128
+      num_train_steps: 10
+      learning_rate: 0.001
+      reg_type: 'bow' # regularize bag of words only or everything: ['bow', 'all']
+      regularizor: 'l2'   # [l1, l2]
+      lambda: 0.1         # 0 turns regularization off
+      encoder_layers: 1
+      encoder_units: 4
+      classifier_layers: 1
+      classifier_units: 4
+      regressor_layers: 1
+      regressor_units: 4
+      gradient_clip: 5.0
+
+
+  - type: "DR_ATTN"
+    name: 'causal_neural_1'
+    skip: False
+    params:
+      use_glove: False
+      attn_importance_strategy: 'mean'  # [mean, max]
+      batch_size: 128
+      num_train_steps: 10
+      learning_rate: 0.001
+      embedding_size: 10
+      encoder_layers: 2
+      encoder_units: 10
+      attn_layers: 2
+      attn_units: 10
+      classifier_layers: 1
+      classifier_units: 10
+      regressor_layers: 1
+      regressor_units: 10
+      gradient_clip: 5.0
+      dropout: 0.4
+
+
+  - type: "double-regression"
+    name: 'double_1'
+    skip: True
+    params:
+      regularizor: 'l2'   # [l1, l2]
+      lambda: 0.0         # 0 turns regularization off
+      batch_size: 128
+      num_train_steps: 1000
+      
+
+  - type: "fixed-regression"
+    name: 'fixed_1'
+    skip: True
+    params:
+      regularizor: 'l2'   # [l1, l2]
+      lambda: 0.0         # 0 turns regularization off
+      batch_size: 128
+      num_train_steps: 1000
+
+  - type: "regression"
+    name: 'regression_1'
+    skip: True
+    params:
+      regularizor: 'l2'   # [l1, l2]
+      lambda: 0.0         # 0 turns regularization off
+      batch_size: 128
+      num_train_steps: 1000
+
+
+
+######### EVALUATION
+# k-highest scoring features for use by evaluation regressions
+num_eval_features: 150
+
+
