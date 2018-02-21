@@ -4,7 +4,7 @@ This repo contains code for the paper, "Deconfounded Lexicon Induction for Inter
 
 You can read the paper [here](). It outlines the algorithms implemented in this repo.
 
-The project website is [here]().
+The project website is [here](https://nlp.stanford.edu/projects/deconfounded-lexicon-induction/).
 
 ## Installation
 
