@@ -2,7 +2,7 @@
 
 This repo contains code for the paper, "Deconfounded Lexicon Induction for Interpretable Social Science".
 
-You can read the paper [here](). It outlines the algorithms implemented in this repo.
+You can read the paper [here](https://nlp.stanford.edu/pubs/pryzant2018lexicon.pdf). It outlines the algorithms implemented in this repo.
 
 The project website is [here](https://nlp.stanford.edu/projects/deconfounded-lexicon-induction/).
 
