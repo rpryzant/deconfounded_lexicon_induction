@@ -1,0 +1,7 @@
+absl-py
+numpy
+tensorflow
+sklean
+scipy
+pyyaml
+tqdm

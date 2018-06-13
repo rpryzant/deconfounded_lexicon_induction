@@ -1,0 +1,280 @@
+# This is a sample configuration file. The system uses this file to keep track
+# of where the data is, what format the data is in, which models to experiment
+# with, and how each model should be configured.
+#
+# If you run a job locally, this config file can live in your workstation or
+# CNS.
+#
+# If you run a job through borg this file needs to live in CNS.
+#
+# This config file contains all of the fields needed to run an experiment from
+# start to finish. Please read the comments below to understand this file and
+# how to create config files of your own.
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # DATA  # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# data_path points to your TSV file with all of the data. These data should
+# not be split.
+# For this sample config, we have a special <USER> field which is replaced with
+# your username before any experiments are launched.
+data_path: "testdata/generated.tsv"
+# The system will split your data and append these suffixes to the files
+# it writes. These suffixes also take on the role of being the ID for each
+# split.
+train_suffix: ".train"
+dev_suffix: ".dev"
+test_suffix: ".test"
+
+# Size of each split.
+dev_size: 2
+test_size: 2
+
+# Max sequence length for LSTMs.
+max_seq_len: 50
+
+# Special tokens.
+sos: "<s>"
+eos: "</s>"
+unk: "<unk>"
+
+# data_spec is a list of variables that appear in your TSV input file.
+# data_spec needs to contain all of the columns of your data, and
+# the columns need to be listed in left => right order.
+# Each variable needs to be given:
+#    - a name
+#    - a type (one of [continuous, categorical]) ,
+#    - `control`, an indicator for confounder variables.
+#    - `skip`, an indicator for variables that the system should ignore.
+#    - a weight that will multiply the loss for this variable in neural models.
+# In this example, we are predicting continuous_1 and categorical_2. We
+# are controlling for continuous_2 and categorical_1.
+#
+# Running this on a new dataset is very easy; just change `data_spec` to match
+# your columns. The system can handle any number of categorical and continuous
+# targets or confounds.
+data_spec:
+  - name: "text-input"
+    type: "text"
+
+  - name: "continuous_1"
+    type: "continuous"
+    control: False
+    skip: False
+    weight: 1
+
+  - name: "continuous_2"
+    type: "continuous"
+    control: True
+    skip: False
+    weight: 1
+
+  - name: "categorical_1"
+    type: "categorical"
+    control: True
+    skip: False
+    weight: 1
+
+  - name: "categorical_2"
+    type: "categorical"
+    control: False
+    skip: False
+    weight: 1
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # MODELING  # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Random seed for model initialization.
+seed: 90
+
+# This is where all of your outputs, results, and checkpoints will be written
+# to. As with all other paths in the config file this can be a /cns/ or
+# local path.
+# In this sample config the <USER> field is a special token that is
+# replaced with your username in src/msc/utils.py
+working_dir: "/usr/local/google/home/<USER>/Desktop/test_run"
+
+
+vocab:
+  # This is an optional field that points to a vocab file with 1 token per line.
+  # If this is left null, the system will generate a new vocab file.
+  vocab_file: null
+  # Vocab size.
+  top_n: 1000
+
+
+# model_spec contains a list of models.
+#
+# The system will run each model in this list that has `skip=False`.
+#
+# Any of the parameters in a model can be replaced with a list of
+# parameters. If you do this, the system will run a random grid search
+# over combinations of hyperparameters. For example, we're doing a small
+# search in this config over the `num_train_steps` and `learning_rate`
+# fields of the A_ATTN model.
+# See creative_text_attribution.py::expand_model_spec() for more documentation
+# on running hyperparameter searches.
+#
+# The best practice is to set `skip=True` for models you are not interested
+# in running and performing a hyperparameter search for the models you are
+# interested in. You could also remove movels from this list in order to
+# ignore them, but that's not advisable because then you would loose the
+# parameters as well.
+#
+# Supported model types (the `type` field of a model must be one of these):
+#   - `A_ATTN` -- adversarial selector with attention.
+#   - `DR_BOW` -- deep residualization with bag-of-words.
+#   - `A_BOW` -- adversarial selector with bag-of-words.
+#   - `DR_ATTN` -- deep residualization with attention.
+#   - `double-regression`: residualized regression.
+#   - `fixed-regression`: regression with confound + text features.
+#   - `regression`: regression with text features.
+model_spec:
+  - type: "A_ATTN"
+    # You can name the models whatever you want, and model-specific outputs
+    # will be written to a subdirectory of the config.working_directory
+    # that have this name.
+    name: "flip"
+    # Whether to ignore this model.
+    skip: False
+    batch_size: 128
+    # How many steps to train for. If this number is greater than an epoch,
+    # then we simply cycle through the data.
+    num_train_steps: 2
+    learning_rate: 0.001
+    embedding_size: 10
+    # Set to 0 for no RNN, and go directly from word embeddings.
+    encoder_layers: 1
+    encoder_units: 10
+    # Number of layers in the network that decides attention scores.
+    attn_layers: 2
+    attn_units: 10
+    # Size of any classification heads (adversarial or not).
+    classifier_layers: 1
+    classifier_units: 10
+    # Size of any regression heads (adversarial or not).
+    regressor_layers: 1
+    regressor_units: 10
+    gradient_clip: 5.0
+    dropout: 0.4
+
+  - type: 'DR_BOW'
+    name: 'causal'
+    skip: False
+    batch_size: 128
+    num_train_steps: 2
+    # This uses SGD, so the learning rate should be much higher than the others.
+    learning_rate: 1.0
+    # Accepted values are ['bow', 'all'].
+    # For `bow`, only the parameters that multiply the input bag-of-words vector
+    # will be regularized.
+    reg_type: 'bow'
+    # Accepted values are [l1, l2].
+    regularizer: 'l2'
+    # Setting lambda=0 turns regularization off.
+    lambda: 0.1
+    # Layers for the text-encoding network
+    encoder_layers: 1
+    encoding_dim: 2
+    # The size of the regression/classification network(s) that take
+    # confounds and predict the outcome.
+    regression_layers_1: 1
+    regression_hidden_1: 4
+    classification_layers_1: 1
+    classification_hidden_1: 4
+    # The size of the regression/classification network(s) that take
+    # outcome_hat and the encoded text and re-predict the outcome.
+    regression_layers_2: 1
+    regression_hidden_2: 4
+    classification_layers_2: 1
+    classification_hidden_2: 4
+    dropout: 0.4
+
+  - type: 'A_CNN'
+    name: 'cnn'
+    skip: False
+    batch_size: 16
+    num_train_steps: 1
+    learning_rate: 0.001
+    embedding_size: 4
+    # The filter size to use in the cnn-encoder. This also controls
+    # the ngram size of the selected features.
+    filter_size: '1,2,3,4'
+    n_filters: 4
+    # Size of pre-conv lstm (set to 0 to skip the lstm, which actually
+    # does better)
+    encoder_layers: 0
+    encoder_units: 4
+    dropout: 0.4
+    gradient_clip: 5.0
+    # Adversarial loss multiplyer -- set to 0 to ignore the adversarial signal.
+    rho: 1.0
+    # Only include true positives. False does better.
+    tp_only: False
+
+  - type: "DR_ATTN"
+    name: 'causal_neural'
+    skip: False
+    batch_size: 128
+    num_train_steps: 1
+    learning_rate: 0.001
+    embedding_size: 10
+    # RNN text encoder size.
+    encoder_layers: 2
+    encoder_units: 10
+    attn_layers: 2
+    attn_units: 10
+    # Size of confound-outcome prediction and re-prediction networks.
+    classifier_layers: 1
+    classifier_units: 10
+    regressor_layers: 1
+    regressor_units: 10
+    gradient_clip: 5.0
+    dropout: 0.4
+
+
+  - type: "double-regression"
+    name: 'double'
+    skip: False
+    # [l1, l2]
+    regularizer: 'l2'
+    # 0 turns regularization off
+    lambda: 0.1
+    batch_size: 128
+    num_train_steps: 10
+
+
+  - type: "fixed-regression"
+    name: 'fixed'
+    skip: False
+    # [l1, l2]
+    regularizer: 'l2'
+    # 0 turns regularization off
+    lambda: 0.0
+    batch_size: 128
+    num_train_steps: 10
+
+  - type: "regression"
+    name: 'regression'
+    skip: False
+    # [l1, l2]
+    regularizer: 'l2'
+    # 0 turns regularization off
+    lambda: 0.0
+    batch_size: 128
+    num_train_steps: 1
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # EVALUATION  # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# k-highest scoring features for use by evaluation regressions
+num_eval_features: 100
+# The variable that we are interested in evaluating "towards".
+# If this variable is categorical then the double_regression and any RNN/ATTN
+# based models will produce a seperate word list for each level of the variable.
+# We also run a seperate evaluation for each word list.
+# Note also that this variable *must* be one of the targets. Not a confound.
+eval_variable_name: "categorical_2"
+
