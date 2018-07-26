@@ -20,8 +20,6 @@ from src.data.dataset import Dataset
 import src.msc.constants as constants
 import src.msc.utils as utils
 import src.analysis.evaluator as evaluator
-import src.models.neural.tf_dummy as tf_dummy
-import src.models.neural.tf_flipper as tf_flipper
 
 def process_command_line():
     """ returns a 1-tuple of cli args
