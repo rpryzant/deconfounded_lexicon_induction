@@ -1,5 +1,8 @@
 # Text Attribution
 
+Code for [Interpretable Neural Architectures for Attributing an Ad’s Performance to its Writing Style](https://nlp.stanford.edu/pubs/pryzant2018emnlp.pdf)
+
+
 ## Setup
 
 ```
