@@ -1,3 +1,7 @@
+# [4/19/21] DEPRECATED -- please use [this repo](https://github.com/rpryzant/deconfounded-lexicon-induction) instead 
+
+This repo is no longer under active development. 
+
 # Deconfounded Lexicon Induction
 
 This repo contains code for the paper, "Deconfounded Lexicon Induction for Interpretable Social Science".
