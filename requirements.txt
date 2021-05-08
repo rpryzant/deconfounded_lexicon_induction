@@ -1,4 +1,4 @@
-eventlet==0.22.0
+eventlet==0.31.0
 nltk==3.2.5
 numpy==1.14.0
 pandas==0.22.0
