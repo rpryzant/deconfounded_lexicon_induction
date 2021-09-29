@@ -1,5 +1,5 @@
 eventlet==0.22.0
-nltk==3.2.5
+nltk==3.6.3
 numpy==1.14.0
 pandas==0.22.0
 PyYAML==3.12
